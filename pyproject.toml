@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "temperature-converter-api"
+version = "1.0.0"
+description = "REST API wrapper for W3Schools SOAP Temperature Conversion Service"
+requires-python = ">=3.8,<3.12"
+dependencies = [
+    "fastapi==0.95.2",
+    "uvicorn[standard]==0.22.0",
+    "pydantic==1.10.12",
+    "zeep==4.2.1",
+    "requests==2.31.0",
+    "lxml==4.9.3",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["*"]
