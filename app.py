@@ -8,6 +8,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Optional
+from contextlib import asynccontextmanager
 import logging
 from zeep import Client, Settings
 from zeep.exceptions import Fault, TransportError
@@ -15,24 +16,6 @@ from zeep.exceptions import Fault, TransportError
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Initialize FastAPI app
-app = FastAPI(
-    title="Temperature Conversion API",
-    description="REST API wrapper for W3Schools SOAP Temperature Conversion Service",
-    version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc"
-)
-
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Initialize SOAP client
 soap_client = None
@@ -67,9 +50,9 @@ class TemperatureConverterClient:
                 results.append(f"Error converting {temp}: {e}")
         return results
 
-@app.on_event("startup")
-async def startup_event():
-    """Initialize the SOAP client on startup"""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize and cleanup resources"""
     global soap_client
     try:
         soap_client = TemperatureConverterClient()
@@ -77,6 +60,28 @@ async def startup_event():
     except Exception as e:
         logger.error(f"Failed to initialize SOAP client: {e}")
         raise
+    yield
+    # Cleanup if needed
+    logger.info("Shutting down...")
+
+# Initialize FastAPI app
+app = FastAPI(
+    title="Temperature Conversion API",
+    description="REST API wrapper for W3Schools SOAP Temperature Conversion Service",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    lifespan=lifespan
+)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Pydantic models for request/response
 class TemperatureRequest(BaseModel):
